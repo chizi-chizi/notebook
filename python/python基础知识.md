@@ -161,6 +161,8 @@ pip install -r requirements.txt
 
 # 常用库
 
+
+
 ## scapy库
 
 ### 参考
@@ -679,3 +681,563 @@ def ftpsniff(pkt):
 #### 实例化一个TCP（）分析
 
 dataofs----> data   offset的简写。
+
+## 模板-jinja2
+
+### 参考
+
+[template](https://docs.python.org/3/library/string.html#template-strings)
+
+[Using Python, YAML and Jinja2 to Generate Config Files](http://dontfragment.com/using-python-yaml-and-jinja2-to-generate-config-files/)
+
+[jinja2语法](http://docs.jinkan.org/docs/jinja2/templates.html)
+
+[简书-python-jinja2语法](https://www.jianshu.com/p/4739ad4dc5e1)
+
+[jinja2语法小记](https://shansan.top/2019/01/09/Jinja2语法小记/)
+
+[W3c jinja2中文文档](https://www.w3cschool.cn/yshfid/)
+
+### 快速入门
+快速入门的内容均参考自[Using Python, YAML and Jinja2 to Generate Config Files](http://dontfragment.com/using-python-yaml-and-jinja2-to-generate-config-files/)
+
+#### 概述
+使用python, yaml和jinja2生成配置文件， 需要三个组件：
+1. Jinja2:用以定义模板
+2. YAML-file：定义数据，这些数据是为了插入进配置文件中
+3. Python脚本：把YAML-file中的数据插入进模板中，从而生成配置文件。
+
+---
+
+#### 安装工具：
+
+- 安装jinja2库
+
+```
+pip install jinja2
+```
+
+- 安装yaml库
+```
+pip install pyyaml
+```
+#### 代码如下
+目录结构：
+
+![1592300469329](picture/1592300469329.png)
+
+##### 模板代码
+
+test.template文件内容如下：
+```
+hostname: {{ name }}
+
+interface: Loopback0
+ip address: 10.0.0.{{ id }} 255.255.255.255
+
+{% for vlan, name in vlans.items() %}
+vlan: {{ vlan }}
+name: {{ name }}
+{% endfor %}
+
+router: ospf 1
+router-id: 10.0.0.{{ id }}
+auto-cost: reference-bandwidth 10000
+{% for networks in ospf %}
+network: {{ networks.network }} area {{ networks.area }}
+{% endfor %}
+```
+
+说明：
+
+```
+1. 被{{}}包住的是变量或者表达式
+2. {% for vlan, name in vlans.items() %}.........{% endfor %}是循环结构
+```
+
+##### 数据代码
+数据使用yaml格式，内容如下：
+
+```yaml
+id: 1
+name: R1
+vlans:
+  10: Users
+  20: Voice
+  30: Management
+ospf:
+  - network: 10.0.1.0 0.0.0.255
+    area: 0
+  - network: 10.0.2.0 0.0.0.255
+    area: 2
+```
+
+##### python脚本代码
+
+```python
+#Import necessary functions from Jinja2 module
+from jinja2 import Environment, FileSystemLoader
+
+#Import YAML module
+import yaml
+
+#Load data from YAML into Python dictionary
+config_data = yaml.safe_load(open('./test.yaml'))
+
+#Load Jinja2 template
+env = Environment(loader = FileSystemLoader('../NXDDOS_template'), trim_blocks=True, lstrip_blocks=True)
+template = env.get_template('test.template')
+
+#Render the template with data and print the output
+print(template.render(config_data))
+```
+##### 执行python脚本
+
+```txt
+/usr/bin/python2.7 /Users/hc0565/01tool/NXDDOS_template/test.py
+hostname: R1
+
+interface: Loopback0
+ip address: 10.0.0.1 255.255.255.255
+
+vlan: 10
+name: Users
+vlan: 20
+name: Voice
+vlan: 30
+name: Management
+
+router: ospf 1
+router-id: 10.0.0.1
+auto-cost: reference-bandwidth 10000
+network: 10.0.1.0 0.0.0.255 area 0
+network: 10.0.2.0 0.0.0.255 area 2
+
+```
+### 使用jinja2框架
+
+```python
+'''
+1.首先提供一个模板文件
+2.打开模板文件，并读取文件使用jinja2实例化一个对象
+3.渲染
+'''
+
+filepath = "/test.template"
+from jinja2 import Template
+
+with open(filepath, "r") as fd:
+    test_template = Template(fd.read())
+    test_content = test_template.render()
+
+```
+
+### jinja2模板语法
+详情见[jinja2语法](http://docs.jinkan.org/docs/jinja2/templates.html),此文档只列出常用的语法
+#### 变量
+#### 结构
+#### 方法
+
+
+
+## 多线程库
+
+### 参考
+- [多线程实例](https://github.com/arifulhaqueuc/python-multithreading-examples)
+- [多线程爬虫](https://github.com/suliangxd/multithreading-spider)
+- [多线程学习总结](https://blog.csdn.net/comprel/article/details/72798319)
+- [python使用Ctrl+C中断threading多线程死循环及setDaemon守护进程](https://blog.csdn.net/comprel/article/details/72798331)
+- [多线程threading](http://www.liujiangblog.com/course/python/79)
+
+### 简介
+在Python3中，通过threading模块提供线程的功能。原来的thread模块已废弃。但是threading模块中有个Thread类（大写的T，类名），是模块中最主要的线程类，一定要分清楚了，千万不要搞混了。
+### 组成
+#### 方法与属性
+threading模块提供了一些比较实用的方法或者属性，例如：
+
+```
+方法与属性 	        描述
+current_thread() 	返回当前线程
+active_count() 	    返回当前活跃的线程数，1个主线程+n个子线程
+get_ident() 	    返回当前线程
+enumerater() 	    返回当前活动 Thread 对象列表
+main_thread() 	    返回主 Thread 对象
+settrace(func) 	    为所有线程设置一个 trace 函数
+setprofile(func) 	为所有线程设置一个 profile 函数
+stack_size([size]) 	返回新创建线程栈大小；或为后续创建的线程设定栈大小为 size
+TIMEOUT_MAX 	    Lock.acquire(), RLock.acquire(), Condition.wait() 允许的最大超时时间
+```
+#### 类
+threading模块包含下面的类：
+
+- Thread：基本线程类
+- Lock：互斥锁
+- RLock：可重入锁，使单一进程再次获得已持有的锁(递归锁)
+- Condition：条件锁，使得一个线程等待另一个线程满足特定条件，比如改变状态或某个值。
+- Semaphore：信号锁。为线程间共享的有限资源提供一个”计数器”，如果没有可用资源则会被阻塞。
+- Event：事件锁，任意数量的线程等待某个事件的发生，在该事件发生后所有线程被激活
+- Timer：一种计时器
+- Barrier：Python3.2新增的“阻碍”类，必须达到指定数量的线程后才可以继续执行。
+
+### Thread类
+
+#### 多线程
+##### 介绍
+###### 原型
+
+```
+threading.Thread(self, 
+                group   =   None,
+                target  =   None,
+                name    =   None,
+                args    =   (),
+                kwargs  =   None,
+                *,
+                daemon  =   None)
+```
+
+- 参数group是预留的，用于将来扩展；
+- 参数target是一个可调用对象，在线程启动后执行；
+- 参数name是线程的名字。默认值为“Thread-N“，N是一个数字。
+- 参数args和kwargs分别表示调用target时的参数列表和关键字参数。
+
+###### 方法和属性
+- ==start()== 	启动线程，等待CPU调度
+- ==run()== 	线程被cpu调度后自动执行的方法
+- ==getName()、setName()和name== 	用于获取和设置线程的名称。
+- ==setDaemon()== 	设置为后台线程或前台线程（默认是False，前台线程）。如果是后台线程，主线程执行过程中，后台线程也在进行，主线程执行完毕后，后台线程不论成功与否，均停止。如果是前台线程，主线程执行过程中，前台线程也在进行，主线程执行完毕后，等待前台线程执行完成后，程序才停止。
+- ==ident== 	获取线程的标识符。线程标识符是一个非零整数，只有在调用了start()方法之后该属性才有效，否则它只返回None。
+- ==is_alive()== 	判断线程是否是激活的（alive）。从调用start()方法启动线程，到run()方法执行完毕或遇到未处理异常而中断这段时间内，线程是激活的。
+- ==isDaemon()方法和daemon属性== 	是否为守护线程
+- ==join([timeout])== 	调用该方法将会使主调线程堵塞，直到被调用线程运行结束或超时。参数timeout是一个数值类型，表示超时时间，如果未提供该参数，那么主调线程将一直堵塞到被调线程结束。
+
+##### 创建多线程
+有两种方式来创建线程：一种是在实例化threading.Thread对象的时候，将线程要执行的任务函数作为参数传入线程；另一种是继承Thread类，并重写它的run()方法；
+###### 方法一、实例化
+
+```
+import threading
+import time
+
+def show(arg):
+    time.sleep(1)
+    print('thread '+str(arg)+" running....")
+
+if __name__ == '__main__':
+    for i in range(10):
+        t = threading.Thread(target=show, args=(i,))
+        t.start()
+```
+
+
+###### 方法二、继承、重写run()方法
+
+
+```
+import threading
+
+class MyThread(threading.Thread):
+    def __init__(self, thread_name):
+        # 注意：一定要显式的调用父类的初始化函数。
+        super(MyThread, self).__init__(name=thread_name)
+
+    def run(self):
+        print("%s正在运行中......" % self.name)
+
+if __name__ == '__main__':    
+    for i in range(10):
+        MyThread("thread-" + str(i)).start()
+```
+
+##### 多线程退出
+
+线程分为前台线程和后台线程两种类型，默认情况下，线程为前台线程，可以使用Thread类的setDaemon()把前台线程设置为后台线程。多线程退出时，受线程类型的影响，具体如下：
+- 如果是前台线程，主线程执行过程中，前台线程也在进行，主线程执行完毕后，等待前台线程执行完成后，程序才停止。
+- 如果是后台线程，主线程执行过程中，后台线程也在进行，主线程执行完毕后，后台线程不论成功与否，均停止。
+
+
+###### 例一、前台线程退出
+代码：
+```
+import time
+import threading
+
+def doWaiting():
+    print('start waiting:', time.strftime('%H:%M:%S'))
+    time.sleep(3)
+    print('stop waiting', time.strftime('%H:%M:%S'))
+
+t = threading.Thread(target=doWaiting)
+t.start()
+# 确保线程t已经启动
+time.sleep(1)
+print('start job')
+print('end job')
+```
+执行结果：
+
+```
+start waiting: 10:50:35
+start job
+end job
+stop waiting 10:50:38
+```
+Python默认会等待最后一个线程执行完毕后才退出。上面例子中，主线程没有等待子线程t执行完毕，而是啥都不管，继续往下执行它自己的代码，执行完毕后也没有结束整个程序，而是等待子线程t执行完毕，整个程序才结束。
+
+###### 例二、后台进程退出
+代码：
+```
+import threading
+import time
+
+def run():
+    print(threading.current_thread().getName(), "开始工作")
+    time.sleep(2)       # 子线程停2s
+    print("子线程工作完毕")
+
+for i in range(3):
+    t = threading.Thread(target=run,)
+    t.setDaemon(True)   # 把子线程设置为守护线程，必须在start()之前设置
+    t.start()
+
+time.sleep(1)     # 主线程停1秒
+print("主线程结束了！")
+print(threading.active_count())  # 输出活跃的线程数
+```
+执行结果：
+
+```
+Thread-1 开始工作
+Thread-2 开始工作
+Thread-3 开始工作
+主线程结束了！
+4
+```
+可以看出，子线程并没有执行到“子线程工作完毕”那一行就退出了。也就是说，当主线程结束后，守护子线程也会随之结束，整个程序也跟着退出。
+
+
+
+### 多线程存在的问题——资源竞争
+举例：
+
+```
+import threading
+num = 0
+
+def add_a(count):
+    global num
+    print('a是'+str(num))
+    for i in range(count):
+        num += 1
+    print('a最终是'+str(num))
+
+def add_b(count):
+    global num
+    print('b是'+str(num))
+    for i in range(count):
+        num += 1
+    print('b最终是'+str(num))
+
+def main():
+    t1 = threading.Thread(target=add_a, args=(1000000,))
+    t2 = threading.Thread(target=add_b, args=(1000000,))
+    t1.start()
+    t2.start()
+    t1.join()
+    t2.join()
+    print(num)
+
+if __name__ == '__main__':
+    main()
+```
+执行结果：
+![1592300775990](picture/1592300775990.png)
+分析：
+
+我们给两个函数传递的参数是1000000,每个函数都是进行100w次的+1操作, 按照我们的常识来说, 最后的结果应该是200w才对, 但是结果却是1514861(这里的结果并不是固定的)
+产生这种结果的原因是因为python的解释器会把一个简单的+1操作分成多步:
+
+1. 获取num的值
+2. 将num的值+1
+3. 将运算完成的值赋给num
+
+又因为这是多线程的, 所以cpu在处理两个线程的时候, 是采用雨露均沾的方式, 可能在线程一刚刚将num值+1还没来得及将新值赋给num时, 就开始处理线程二了, 因此当线程二执行完全部的num+=1的操作后, 可能又会开始对线程一的未完成的操作, 而此时的操作停留在了完成运算未赋值的那一步, 因此在完成对num的赋值后, 就会覆盖掉之前线程二对num的+1操作。
+
+### 怎么解决资源竞争问题？
+使用锁。具体为方法为：
+
+在threading中有一个Lock类,通过调用Lock类中的acquire()方法, 可以将后面的代码保护起来一直执行, 其他的线程会处于监听状态,直到监听到那个线程调用了release()方法解锁, 才会继续争夺对cpu的使用权
+
+```
+import threading
+num = 0
+lock = threading.Lock()
+
+def add_a(count):
+    global num
+    print('a是'+str(num))
+    for i in range(count):
+        lock.acquire()
+        num += 1
+        lock.release()
+    print('a最终是'+str(num))
+
+def add_b(count):
+    global num
+    print('b是'+str(num))
+    for i in range(count):
+        lock.acquire()
+        num += 1
+        lock.release()
+    print('b最终是'+str(num))
+
+def main():
+    t1 = threading.Thread(target=add_a, args=(1000000,))
+    t2 = threading.Thread(target=add_b, args=(1000000,))
+    t1.start()
+    t2.start()
+    t1.join()
+    t2.join()
+    print(num)
+
+if __name__ == '__main__':
+    main()
+```
+执行结果如下：
+![1592300799572](picture/1592300799572.png)
+
+### 实例
+#### hello world
+
+```
+  
+#!/usr/bin/python
+
+
+# This is Hello World with Python multithreading.
+# A user defined function is created and 
+# the function is called when a thread is initialized. 
+
+
+import threading
+
+
+def MyFunction():
+	"""This is a user defined function"""
+	print "Hello World"
+	return
+
+
+def Main():
+	"""This is where we create a thread. 
+	Target means run this function when a thread is initiated."""
+	myThread = threading.Thread(target=MyFunction) 	
+	myThread.start() 	# Starting a thread
+
+
+if __name__ == '__main__':
+	Main()
+```
+
+#### 传参
+
+```
+#!/usr/bin/python
+
+
+## This program adds two given numbers and prints the result.
+
+
+import threading 
+
+
+def MyFunction(num1, num2):
+	"""This is user defined thread function"""
+	print "Given numbers= %s, %s" %(num1, num2)
+	print "Result = %d" %(int(num1)+int(num2))
+	return
+
+
+def Main():
+	t = threading.Thread(
+			target=MyFunction, 
+			args=(12,13)
+		)
+	t.start()
+
+
+if __name__ == '__main__':
+	Main()
+```
+#### thread name
+
+```
+#!/usr/bin/python
+
+
+# This multithreading program outputs default thread name 
+# when the thread is being executed.
+
+
+import threading
+import time
+
+
+def ThreadFunction():
+	print threading.currentThread().getName(), "Starting"
+	time.sleep(2)
+	print threading.currentThread().getName(), "Exiting"
+
+
+def Main():
+	w = threading.Thread(target=ThreadFunction)
+	w.start()
+
+
+if __name__ == '__main__':
+	Main()
+```
+#### threading.Timer
+
+```
+#!/usr/bin/python
+
+
+## A Timer starts its work after a delay, 
+## and can be canceled at any point within that delay time period.
+
+
+import threading
+import time
+import logging
+
+
+logging.basicConfig(
+	level=logging.DEBUG,
+    format='(%(threadName)-10s) %(message)s',
+)
+
+
+def delayed():
+    logging.debug('Thread program still running')
+    return
+
+def Main():
+	t1 = threading.Timer(3, delayed)
+	t1.setName('Timer 1')
+	t2 = threading.Timer(3, delayed)
+	t2.setName('Timer 2')
+
+	logging.debug('Starting thread timers')
+	t1.start()
+	t2.start()
+
+	logging.debug('We are waiting before canceling %s', t2.getName())
+	time.sleep(2)
+	logging.debug('Now canceling %s', t2.getName())
+	t2.cancel()
+
+
+if __name__ == "__main__":
+	Main()
+```
