@@ -683,7 +683,7 @@ def ftpsniff(pkt):
 
 dataofs----> data   offset的简写。
 
-## 模板-jinja2
+## jinja2库
 
 ### 参考
 
@@ -841,7 +841,7 @@ with open(filepath, "r") as fd:
 
 
 
-## 多线程库
+## threading库
 
 ### 参考
 - [多线程实例](https://github.com/arifulhaqueuc/python-multithreading-examples)
@@ -1241,4 +1241,188 @@ def Main():
 
 if __name__ == "__main__":
 	Main()
+```
+
+## argparse库
+
+### 参考
+- [编程手册](https://docs.python.org/zh-cn/3.7/library/argparse.html)
+
+
+- https://riptutorial.com/zh-CN/python/example/6133/使用argparse设置互斥参数
+- https://zhuanlan.zhihu.com/p/56922793
+- http://www.uwenku.com/question/p-ezpbpded-zo.html
+- https://codeday.me/bug/20181204/429170.html
+- https://www.cnblogs.com/fireflow/p/4833943.html
+- https://www.cnblogs.com/fangbei/p/python-print-color.html
+- https://docs.python.org/zh-cn/3/howto/ipaddress.html
+- https://zhuanlan.zhihu.com/p/92473025
+
+### 简介
+argparse是python用于解析命令行参数和选项的标准模块，内置于python，不需要安装。
+
+用于代替已经过时的optparse模块。argparse模块的作用是用于解析命令行参数。
+### 框架
+
+```python
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument()
+parser.parse_args()
+```
+解释：
+
+- 首先导入该模块；
+- 然后创建一个解析对象；
+- 然后向该对象中添加你要关注的命令行参数和选项，每一个add_argument方法对应一个你要关注的参数或选项；
+- 最后调用parse_args()方法进行解析；
+- 解析成功之后即可使用。
+
+### 举例
+
+### 常见模型
+#### 子命令
+
+
+### 编程手册
+#### 创建解析器对象ArgumentParser
+原型：
+
+```python
+ArgumentParser(
+    prog                 =   None,
+    usage                =   None,
+    description          =   None,
+    epilog               =   None, 
+    parents              =   [],
+    formatter_class      =   argparse.HelpFormatter, 
+    prefix_chars         =   '-',
+    fromfile_prefix_chars=   None,
+    argument_default     =   None,
+    conflict_handler     =   'error', 
+    add_help             =   True)
+```
+参数说明：
+
+- prog：  程序的名字，默认为sys.argv[0]，用来在help信息中描述程序的名称。
+- usage： 描述程序用途的字符串
+- description：help信息前的文字。
+- epilog：help信息之后的信息
+- add_help：设为False时，help信息里面不再显示-h --help信息。
+- prefix_chars：参数前缀，默认为'-'
+- fromfile_prefix_chars：前缀字符，放在文件名之前
+- argument_default：参数的全局默认值。
+- conflict_handler：对冲突的处理方式，默认为返回错误“error”。还有“resolve”，智能解决冲突。当用户给程序添加了两个一样的命令参数时，“error”就直接报错，提醒用户。而“resolve”则会去掉第一次出现的命令参数重复的部分或者全部（可能是短命令冲突或者全都冲突）。
+
+#### add_argument()方法
+add_argument()方法，用来指定程序需要接受的命令参数，其函数原型如下：
+
+```txt
+add_argument(name or flags...[, action]
+    [, nargs][, const][, default]
+    [, type][, choices][, required][, help]
+    [, metavar][, dest])
+```
+参数说明：
+- name or flags：参数有两种，可选参数和位置参数。parse_args()运行时，会用'-'来认证可选参数，剩下的即为位置参数。位置参数必选，可选参数可选。
+    - 添加可选参数
+    ```
+     parser.add_argument('-f', '--foo')
+    ```
+    - 添加位置参数
+    ```
+     parser.add_argument('bar')
+    ```
+- action:参数动作。argparse内置6种动作可以在解析到一个参数时进行触发：
+    - store 保存参数值，可能会先将参数值转换成另一个数据类型。若没有显式指定动作，则==默认为该动作==。
+    - store_const 保存一个被定义为参数规格一部分的值，而不是一个来自参数解析而来的值。这通常用于实现非布尔值的命令行标记。
+    - store_ture/store_false 保存相应的布尔值。这两个动作被用于实现布尔开关。
+    - append 将值保存到一个列表中。若参数重复出现，则保存多个值。
+    ```
+    >>> import argparse
+    >>> parse = argparse.ArgumentParser()
+    >>> parse.add_argument('-b',action = 'append')
+    _AppendAction(option_strings=['-b'], dest='b', nargs=None, const=None, default=None, type=None, choices=None, help=None, metavar=None)
+    >>> parse.parse_args('-b  100 -b 200'.split())
+    Namespace(b=['100', '200'])
+    >>> 
+    ```
+    - append_const 将一个定义在参数规格中的值保存到一个列表中。
+    - version 打印关于程序的版本信息，然后退出
+    ```
+    >>> import argparse
+    >>> parse = argparse.ArgumentParser(prog = 'the demo ')
+    >>> parse.add_argument('--version',action = 'version',version = '%(prog)s2.0')
+    _VersionAction(option_strings=['--version'], dest='version', nargs=0, const=None, default='==SUPPRESS==', type=None, choices=None, help="show program's version number and exit", metavar=None)
+    >>> parse.parse_args('--version'.split())
+    the demo 2.0
+    ```
+    - count统计参数出现的次数
+    ```
+    >>> import argparse
+    >>> parse = argparse.ArgumentParser()
+    >>> parse.add_argument('-b',action = 'count')
+    _CountAction(option_strings=['-b'], dest='b', nargs=0, const=None, default=None, type=None, choices=None, help=None, metavar=None)
+    >>> parse.parse_args('-b -b'.split())
+    Namespace(b=2)
+    ```
+- nargs:参数的数量。值可以为整数N(N个)，*(任意多个)，+(一个或更多)
+值为？时，首先从命令行获得参数，若没有则从const获得，然后从default获得。
+- dest:参数值就保存为parse_args()返回的命名空间对象中名为该 dest 参数值的一个属性。
+如果提供dest，例如dest="a"，那么可以通过args.a访问该参数
+- default：设置参数的默认值
+- type：把从命令行输入的结果转成设置的类型
+- choice：允许的参数值
+- required：必须参数
+- help:参数的帮助信息
+
+#### parse_args()
+
+将参数字符串转换为对象，并将它们指定为名称空间的属性。返回经过解析后的命令空间。此命令孔家是一种类似于python字典的数据类型。==我们可以使用 arg.参数名来提取这个参数==
+
+##### 原型
+
+```
+ArgumentParser.parse_args(args=None, namespace=None)
+```
+##### 参数
+- args ：待解析的字符串==列表==，默认情况是sys.argv
+- namespace:获取属性的对象，默认为空
+
+##### 返回值
+返回一个argparse.Namespace对象。
+##### 举例
+
+举例说明：
+
+#### class argparse.Namespace
+
+Simple class used by default by parse_args() to create an object holding attributes and return it.
+
+This class is deliberately simple, just an object subclass with a readable string representation. If you prefer to have dict-like view of the attributes, you can use the standard Python idiom, vars():
+
+
+```
+>>>
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('--foo')
+>>> args = parser.parse_args(['--foo', 'BAR'])
+>>> vars(args)
+{'foo': 'BAR'}
+```
+
+It may also be useful to have an ArgumentParser assign attributes to an already existing object, rather than a new Namespace object. This can be achieved by specifying the namespace= keyword argument:
+
+
+```
+>>>
+>>> class C:
+...     pass
+...
+>>> c = C()
+>>> parser = argparse.ArgumentParser()
+>>> parser.add_argument('--foo')
+>>> parser.parse_args(args=['--foo', 'BAR'], namespace=c)
+>>> c.foo
+'BAR'
 ```
